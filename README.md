@@ -1,3 +1,3 @@
 # Yekaterina Kostina
 
-# GitHub Pages: https://github.com/yekatya/Lab6_Starter
+# GitHub Pages: https://yekatya.github.io/Lab6_Starter/
