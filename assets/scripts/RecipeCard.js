@@ -1,13 +1,15 @@
 class RecipeCard extends HTMLElement {
   constructor() {
     // Part 1 Expose - TODO
-
     // You'll want to attach the shadow DOM here
+    super();
+    this.attachShadow({ mode: "open" });
   }
 
   set data(data) {
     // This is the CSS that you'll use for your recipe cards
-    const styleElem = document.createElement('style');
+    console.log(data);
+    const styleElem = document.createElement("style");
     const styles = `
       * {
         font-family: sans-serif;
@@ -83,10 +85,10 @@ class RecipeCard extends HTMLElement {
         font-size: 12px;
       }
     `;
-    styleElem.innerHTML = style;
+    styleElem.innerHTML = styles;
 
     // Here's the root element that you'll want to attach all of your other elements to
-    const card = document.createElement('article');
+    const card = document.createElement("article");
 
     // Some functions that will be helpful here:
     //    document.createElement()
@@ -98,11 +100,82 @@ class RecipeCard extends HTMLElement {
 
     // Make sure to attach your root element and styles to the shadow DOM you
     // created in the constructor()
+    //create img
+    let cardImg = document.createElement("img");
+    cardImg.setAttribute("src", searchForKey(data, "thumbnailUrl"));
+    cardImg.setAttribute("alt", searchForKey(data, "headline"));
 
-    // Part 1 Expose - TODO
+    //create title
+    let title = document.createElement("p");
+    title.className = "title";
+    //link to recipe
+    let textLink = document.createElement("a");
+    textLink.innerHTML = searchForKey(data, "headline");
+    textLink.href = getUrl(data);
+    title.appendChild(textLink);
+    //create organization section
+    let organization = document.createElement("p");
+    organization.className = "organization";
+    organization.innerHTML = getOrganization(data);
+    //create rating section
+    let rating = document.createElement("div");
+    rating.className = "rating";
+    let spanRatingValue = document.createElement("span");
+    spanRatingValue.textContent = "No Reviews";
+    rating.appendChild(spanRatingValue);
+
+    if (searchForKey(data, "ratingValue") != undefined) {
+      spanRatingValue.textContent = searchForKey(data, "ratingValue");
+      let spanRatingCount = document.createElement("span");
+      spanRatingCount.textContent =
+        "(" + searchForKey(data, "ratingCount") + ")";
+      let ratingImg = document.createElement("img");
+      if (Math.round(searchForKey(data, "ratingValue")) == 5) {
+        ratingImg.setAttribute("src", "assets/images/icons/5-star.svg");
+        ratingImg.setAttribute("alt", "5 stars");
+      }
+      if (Math.round(searchForKey(data, "ratingValue")) == 4) {
+        ratingImg.setAttribute("src", "assets/images/icons/4-star.svg");
+        ratingImg.setAttribute("alt", "4 stars");
+      }
+      if (Math.round(searchForKey(data, "ratingValue")) == 3) {
+        ratingImg.setAttribute("src", "assets/images/icons/3-star.svg");
+        ratingImg.setAttribute("alt", "3 stars");
+      }
+      if (Math.round(searchForKey(data, "ratingValue")) == 2) {
+        ratingImg.setAttribute("src", "assets/images/icons/2-star.svg");
+        ratingImg.setAttribute("alt", "2 stars");
+      }
+      if (Math.round(searchForKey(data, "ratingValue")) == 1) {
+        ratingImg.setAttribute("src", "assets/images/icons/1-star.svg");
+        ratingImg.setAttribute("alt", "1 stars");
+      }
+      rating.appendChild(ratingImg);
+      rating.appendChild(spanRatingCount);
+    }
+
+    //create time section
+    let time = document.createElement("time");
+    let convertedTime = convertTime(searchForKey(data, "totalTime"));
+    time.innerHTML = convertedTime;
+    //create ingredients section
+    let ingredients = document.createElement("p");
+    ingredients.className = "ingredients";
+    ingredients.innerHTML = createIngredientList(
+      searchForKey(data, "recipeIngredient")
+    );
+
+    //append all the elements to the card then append it to the shadow
+    card.appendChild(cardImg);
+    card.appendChild(title);
+    card.appendChild(organization);
+    card.appendChild(rating);
+    card.appendChild(time);
+    card.appendChild(ingredients);
+    this.shadowRoot.append(card);
+    this.shadowRoot.append(styleElem);
   }
 }
-
 
 /*********************************************************************/
 /***                       Helper Functions:                       ***/
@@ -123,7 +196,7 @@ function searchForKey(object, key) {
       value = object[k];
       return true;
     }
-    if (object[k] && typeof object[k] === 'object') {
+    if (object[k] && typeof object[k] === "object") {
       value = searchForKey(object[k], key);
       return value !== undefined;
     }
@@ -138,11 +211,12 @@ function searchForKey(object, key) {
  */
 function getUrl(data) {
   if (data.url) return data.url;
-  if (data['@graph']) {
-    for (let i = 0; i < data['@graph'].length; i++) {
-      if (data['@graph'][i]['@type'] == 'Article') return data['@graph'][i]['@id'];
+  if (data["@graph"]) {
+    for (let i = 0; i < data["@graph"].length; i++) {
+      if (data["@graph"][i]["@type"] == "Article")
+        return data["@graph"][i]["@id"];
     }
-  };
+  }
   return null;
 }
 
@@ -154,13 +228,13 @@ function getUrl(data) {
  */
 function getOrganization(data) {
   if (data.publisher?.name) return data.publisher?.name;
-  if (data['@graph']) {
-    for (let i = 0; i < data['@graph'].length; i++) {
-      if (data['@graph'][i]['@type'] == 'Organization') {
-        return data['@graph'][i].name;
+  if (data["@graph"]) {
+    for (let i = 0; i < data["@graph"].length; i++) {
+      if (data["@graph"][i]["@type"] == "Organization") {
+        return data["@graph"][i].name;
       }
     }
-  };
+  }
   return null;
 }
 
@@ -171,25 +245,25 @@ function getOrganization(data) {
  * @return {String} formatted time string
  */
 function convertTime(time) {
-  let timeStr = '';
+  let timeStr = "";
 
   // Remove the 'PT'
   time = time.slice(2);
 
-  let timeArr = time.split('');
-  if (time.includes('H')) {
+  let timeArr = time.split("");
+  if (time.includes("H")) {
     for (let i = 0; i < timeArr.length; i++) {
-      if (timeArr[i] == 'H') return `${timeStr} hr`;
+      if (timeArr[i] == "H") return `${timeStr} hr`;
       timeStr += timeArr[i];
     }
   } else {
     for (let i = 0; i < timeArr.length; i++) {
-      if (timeArr[i] == 'M') return `${timeStr} min`;
+      if (timeArr[i] == "M") return `${timeStr} min`;
       timeStr += timeArr[i];
     }
   }
 
-  return '';
+  return "";
 }
 
 /**
@@ -200,7 +274,7 @@ function convertTime(time) {
  * @return {String} the string comma separate list of ingredients from the array
  */
 function createIngredientList(ingredientArr) {
-  let finalIngredientList = '';
+  let finalIngredientList = "";
 
   /**
    * Removes the quantity and measurement from an ingredient string.
@@ -208,14 +282,14 @@ function createIngredientList(ingredientArr) {
    * (sometimes there isn't, so this would fail on something like '2 apples' or 'Some olive oil').
    * For the purposes of this lab you don't have to worry about those cases.
    * @param {String} ingredient the raw ingredient string you'd like to process
-   * @return {String} the ingredient without the measurement & quantity 
+   * @return {String} the ingredient without the measurement & quantity
    * (e.g. '1 cup flour' returns 'flour')
    */
   function _removeQtyAndMeasurement(ingredient) {
-    return ingredient.split(' ').splice(2).join(' ');
+    return ingredient.split(" ").splice(2).join(" ");
   }
 
-  ingredientArr.forEach(ingredient => {
+  ingredientArr.forEach((ingredient) => {
     ingredient = _removeQtyAndMeasurement(ingredient);
     finalIngredientList += `${ingredient}, `;
   });
@@ -226,4 +300,4 @@ function createIngredientList(ingredientArr) {
 
 // Define the Class so you can use it as a custom element.
 // This is critical, leave this here and don't touch it
-customElements.define('recipe-card', RecipeCard);
+customElements.define("recipe-card", RecipeCard);
